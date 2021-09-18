@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 public class PlayerMovment : MonoBehaviour
 {
     [SerializeField]
-    float _walkSpeed, _jumpSpeed, _rayCastLength;
+    float _walkSpeed, _maxWalkSpeed, _jumpSpeed, _maxJumpHeight, _rayCastLength, _gravityMultiplier;
 
     [SerializeField]
     bool _isJumping, _isFacingRight, _isOnGround;
@@ -16,17 +16,26 @@ public class PlayerMovment : MonoBehaviour
     [SerializeField]
     Rigidbody2D rb;
 
+    [SerializeField]
+    Vector2 MovementVelocity;
+
+    [SerializeField]
+    Animator animator;
+
+    [SerializeField]
+    SpriteRenderer sr;
 
     [Header("Collision")]
     [SerializeField]
     Vector3 _rayCastOffset;
 
+    [SerializeField]
+    LayerMask _groundLayer;
 
 
 
 
-
-    InputActions _inputActions;
+   InputActions _inputActions;
 
     void Awake()
     {
@@ -43,7 +52,7 @@ public class PlayerMovment : MonoBehaviour
 
     void OnMove()
     {
-        FlipAnimation();
+        
     }
 
 
@@ -51,8 +60,13 @@ public class PlayerMovment : MonoBehaviour
 
     void StartJump()
     {
-        rb.velocity = new Vector2(rb.velocity.x, 0);
-        _isJumping = true;
+        //rb.velocity = new Vector2(rb.velocity.x, 0);
+        if (_isOnGround)
+        {
+            _isJumping = true;
+            Jump();
+        }
+        
 
 
     }
@@ -62,44 +76,97 @@ public class PlayerMovment : MonoBehaviour
         _isJumping = false;
     }
 
+    void OnReset() {
+        rb.velocity = new Vector2(0, 0);
+        transform.position = new Vector3(0, 0, 0);
+    }
+
 
     void FixedUpdate()
     {
-        if(!_isOnGround)
-        {
+        //for UI
+        MovementVelocity = rb.velocity;
 
-        }
+        _isOnGround =
+            Physics2D.Raycast(transform.position + _rayCastOffset, Vector2.down, _rayCastLength, _groundLayer)
+            ||
+            Physics2D.Raycast(transform.position - _rayCastOffset, Vector2.down, _rayCastLength, _groundLayer);
+
+
+        
 
 
         Walk();
+
+
+        //Fall multipler used to make fall after apex faster
+        if (rb.velocity.y < 0)
+        {
+            rb.velocity += Vector2.up * Physics2D.gravity.y * 2 * _gravityMultiplier * Time.deltaTime;
+        }
+
+
+
+        if (_isOnGround)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+        }
+
+
         if (_isJumping)
         {
             Jump();
+            
         }
 
+        animator.SetBool("IsOnGround", _isOnGround);
+
+        if (rb.velocity.y > _maxJumpHeight)
+        {
+            _isJumping = false;
+            //rb.velocity = new Vector2(rb.velocity.x, 0);
+        }
     }
 
 
     void Walk()
     {
         Vector2 direction = _inputActions.Player.Move.ReadValue<Vector2>();
+
+        if (direction.x > 0)
+        {
+            _isFacingRight = true;
+        }
+        else if (direction.x < 0)
+        {
+            _isFacingRight = false;
+        }
+
         float walking = direction.x * _walkSpeed;
-        rb.AddForce(new Vector2(direction.x * _walkSpeed, rb.position.y));
+        rb.AddForce(new Vector2(walking, rb.position.y));
+
+
+        sr.flipX = !_isFacingRight;
+
+        if (rb.velocity.x > _maxWalkSpeed)
+        {
+            rb.velocity = new Vector2(_maxWalkSpeed, rb.velocity.y);
+        }
+
+        if (rb.velocity.x < -_maxWalkSpeed)
+        {
+            rb.velocity = new Vector2(-_maxWalkSpeed, rb.velocity.y);
+        }
+
+        animator.SetFloat("Walking_speed", Mathf.Abs(rb.velocity.x));
     }
 
 
-    void Jump() => rb.AddForce(Vector2.up * _jumpSpeed * Time.deltaTime, ForceMode2D.Impulse);
+    //void Jump() => rb.AddForce(Vector2.up * _jumpSpeed * Time.deltaTime, ForceMode2D.Impulse);
+    void Jump() => rb.velocity += Vector2.up * _jumpSpeed * Time.deltaTime;
     void OnEnable() => _inputActions.Enable();
     void OnDisable() => _inputActions.Disable();
 
-
-    void FlipAnimation()
-    {
-        _isFacingRight = !_isFacingRight;
-        Vector3 theScale = transform.localScale;
-        theScale.x *= -1;
-        transform.localScale = theScale;
-    }
 
 
     private void OnDrawGizmos()
