@@ -421,9 +421,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1d0cf55060e54cf98de80c87bb056d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _walkSpeed: 5
+  _walkSpeed: 10
+  _jumpSpeed: 10
   _isJumping: 0
-  _jumpSpeed: 5
+  _isFacingRight: 1
   rb: {fileID: 871676222}
 --- !u!114 &871676224
 MonoBehaviour:
