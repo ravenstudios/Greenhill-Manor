@@ -92,17 +92,15 @@ public class PlayerMovment : MonoBehaviour
             ||
             Physics2D.Raycast(transform.position - _rayCastOffset, Vector2.down, _rayCastLength, _groundLayer);
 
-
-        
-
-
         Walk();
+
+
 
 
         //Fall multipler used to make fall after apex faster
         if (rb.velocity.y < 0)
         {
-            rb.velocity += Vector2.up * Physics2D.gravity.y * 2 * _gravityMultiplier * Time.deltaTime;
+            rb.velocity += Vector2.up * Physics2D.gravity.y * _gravityMultiplier * Time.deltaTime;
         }
 
 
@@ -133,17 +131,24 @@ public class PlayerMovment : MonoBehaviour
     {
         Vector2 direction = _inputActions.Player.Move.ReadValue<Vector2>();
 
-        if (direction.x > 0)
-        {
-            _isFacingRight = true;
-        }
-        else if (direction.x < 0)
-        {
-            _isFacingRight = false;
-        }
+        //if (direction.x > 0)
+        //{
+        //    _isFacingRight = true;
+        //}
+        //else if (direction.x < 0)
+        //{
+        //    _isFacingRight = false;
+        //}
 
-        float walking = direction.x * _walkSpeed;
-        rb.AddForce(new Vector2(walking, rb.position.y));
+        
+        _isFacingRight = (direction.x > 0) ? true: false;
+        _isFacingRight = (direction.x < 0) ? false : true;
+    
+        
+
+        float walking = direction.x * _walkSpeed * Time.deltaTime;
+
+        rb.velocity += new Vector2(walking, 0);
 
 
         sr.flipX = !_isFacingRight;
@@ -152,6 +157,7 @@ public class PlayerMovment : MonoBehaviour
         {
             rb.velocity = new Vector2(_maxWalkSpeed, rb.velocity.y);
         }
+
 
         if (rb.velocity.x < -_maxWalkSpeed)
         {
